@@ -7,12 +7,14 @@
 #include "NamedColors.h"
 
 struct Note {
-	Note(int _pitch, int _duration) {
+	Note(int _pitch, int _duration, string _lyric) {
 		pitch = _pitch;
 		duration = _duration;
+		lyric = _lyric;
 	};
 	
 	int pitch, duration;
+	string lyric;
 };
 
 using namespace pd;
