@@ -4,6 +4,7 @@
 #include "ofxiOS.h"
 #include "ofxiOSExtras.h"
 #include "ofxPd.h"
+#include "NamedColors.h"
 
 struct Note {
 	Note(int _pitch, int _duration) {
@@ -41,7 +42,6 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 		void receiveFloat(const std::string& dest, float value);
 		
 		map<string, int> midiTable;
-		ofColor turquoise, greenSea, emerald, nephritis, peterRiver, belizeHole, amethyst, wisteria, wetAsphalt, midnightBlue, sunFlower, orange, carrot, pumpkin, alizarin, pomegranate, clouds, silver, concrete, asbestos;
 		ofTrueTypeFont font;
 	
 		vector<Note> voicePartS;

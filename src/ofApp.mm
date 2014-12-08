@@ -3,30 +3,6 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 	
-	//  COLORS -----
-	{
-		turquoise.set(26, 188, 156);
-		greenSea.set(22, 160, 133);
-		emerald.set(46, 204, 113);
-		nephritis.set(39, 174, 96);
-		peterRiver.set(52, 152, 219);
-		belizeHole.set(41, 128, 185);
-		amethyst.set(155, 89, 182);
-		wisteria.set(142, 68, 173);
-		wetAsphalt.set(52, 73, 94);
-		midnightBlue.set(44, 62, 80);
-		sunFlower.set(241, 196, 15);
-		orange.set(243, 156, 18);
-		carrot.set(230, 126, 34);
-		pumpkin.set(211, 84, 0);
-		alizarin.set(231, 76, 60);
-		pomegranate.set(192, 57, 43);
-		clouds.set(236, 240, 241);
-		silver.set(189, 195, 199);
-		concrete.set(149, 165, 166);
-		asbestos.set(127, 140, 141);
-	}
-	
 	//	MIDI MAP -----
 	{
 		midiTable["C"]  = 24;
