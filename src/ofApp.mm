@@ -158,6 +158,7 @@ void ofApp::setup(){
 	for (int part = 0; part < NPARTS; part++) {
     currentBeat[part] = 1;
 		currentNote[part] = 0;
+		lastLyric[part] = "";
 	}
 	
 	pd.sendFloat("volume", 1);
@@ -166,6 +167,13 @@ void ofApp::setup(){
 	for (int col = 0; col < 128; col++) {
 		for (int part = 0; part < NPARTS; part++) {
 			pianoRoll[part].push_back(0);
+		}
+	}
+	
+	// LYRICROLL SETUP -----
+	for (int col = 0; col < 128; col++) {
+		for (int part = 0; part < NPARTS; part++) {
+			lyricRoll[part].push_back("");
 		}
 	}
 	
@@ -236,14 +244,28 @@ int convertRange(int val, int oldMin, int oldMax, int newMin, int newMax) {
 void ofApp::update(){
 	
 	if (metroBeat > 0) {
+	
+		// this works with a pianoroll, an 128 item long integer array (per part) that contains the midi value of each note. While a note is being "played" it is added to the end of the array, and the item at the front is removed per frame.
 		
-		// keep the whole roll moving
+		// keep the whole roll moving;
+		// add the current note to the end of the pianoroll, and delete the first note
 		for (int part = 0; part < NPARTS; part++) {
 			pianoRoll[part].erase(pianoRoll[part].begin());
 			pianoRoll[part].push_back(voicePart[part][currentNote[part]].pitch);
+			
+			
+			if (lastLyric[part] != voicePart[part][currentNote[part]].lyric) {
+				lyricRoll[part].erase(lyricRoll[part].begin());
+				lyricRoll[part].push_back(voicePart[part][currentNote[part]].lyric);
+			} else {
+				lyricRoll[part].erase(lyricRoll[part].begin());
+				lyricRoll[part].push_back("");
+			}
+			
+			lastLyric[part] = voicePart[part][currentNote[part]].lyric;
 		}
 		
-		// if note has played for full length, go to next note
+		// if note has played for full length, move on to the next note
 		for (int part = 0; part < NPARTS; part++) {
 			if (metroBeat - currentBeat[part] >= voicePart[part][currentNote[part]].duration) {
 				currentNote[part]++;
@@ -300,46 +322,26 @@ void ofApp::draw(){
 	
 	if (bIsDone == false) {
 		
-		int i;
 		int noteHeight;
 		ofColor color[4] = {wisteria, orange, silver, pomegranate};
 		
 		for (int part = 0; part < NPARTS; part++) {
-			i = 0;
 			noteHeight = 5;
 			ofSetColor(color[part]);
-			
-			// for every note in piano roll
-			for (vector<int>::iterator iter = pianoRoll[part].begin(); iter != pianoRoll[part].end(); ++iter) {
+			for (int i = 0; i < 128; i++) {
 			
 				// set noteYPos
-				noteYPos = ofGetHeight() - convertRange(*iter, 0, 127, 0, ofGetHeight());
-				if (noteYPos >= ofGetHeight()) {
-					noteYPos = ofGetHeight();
-				}
-				if (noteYPos <= 0) {
-					noteYPos = 0;
-				}
-
+				noteYPos = ofGetHeight() - convertRange(pianoRoll[part][i], 0, 127, 0, ofGetHeight());
 			
 				if (part == TENOR) {
 					noteHeight = 10;
-					
-					// if the note is on-pitch, change its color
-					if (i < 10) {
-						if (voicePitch < noteYPos + difficulty && voicePitch > noteYPos - difficulty) {
-							ofSetColor(nephritis);
-							voiceColor = nephritis;
-						} else if (voicePitch < noteYPos + difficulty * 1.5 && voicePitch > noteYPos - difficulty * 1.5) {
-							ofSetColor(emerald);
-							voiceColor = emerald;
-						}
-					}
 				}
-			
-				// draw the note
-				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);				
-				i++;
+				
+				// draw lyric
+					font.drawString(lyricRoll[part][i], i * 10 + (ofGetWidth() / 3), noteYPos - 20);
+				// draw note
+				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
+				
 			}
 			ofSetColor(color[TENOR]);
 		}

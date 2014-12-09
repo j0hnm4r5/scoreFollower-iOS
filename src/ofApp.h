@@ -51,27 +51,29 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 		void receiveFloat(const std::string& dest, float value);
 		
 		map<string, int> midiTable;
+	
 		ofTrueTypeFont font;
 	
-		vector<Note> voicePart[NPARTS];
-	
-		vector<int> pianoRoll[NPARTS];
+		vector<Note>		voicePart[NPARTS];
+		vector<int>			pianoRoll[NPARTS];
+		vector<string>	lyricRoll[NPARTS];
 		
-		float bpm;
-		float tempo;
+		float		bpm;
+		float		tempo;
+		int			metroBeat;
 	
-		int numTotalNotes[NPARTS];
-	
-		int metroBeat;
-	
-		int currentBeat[NPARTS];
-	
-		int currentNote[NPARTS];
+		int	numTotalNotes[NPARTS];
+		int	currentBeat[NPARTS];
+		int	currentNote[NPARTS];
+		int	currentLyric[NPARTS];
+		string lastLyric[NPARTS];
 		
-		float voicePitch;
-		ofColor voiceColor;
-		int noteYPos;
-		int difficulty;
+		float			voicePitch;
+		ofColor		voiceColor;
+		int				noteYPos;
+	
+	
+		int	difficulty;
 	
 		int fromFiddle;
 	
