@@ -25,12 +25,13 @@ void ofApp::setup(){
 	}
 	
 	//	XML SETUP -----
-	xml.load("tune.xml");
+	xml.load("twinkle.xml");
 	
 	char step;
 	int alter;
 	int octave;
 	int duration;
+	string lyric;
 	int numMeasures;
 	
 	// create intro beats
@@ -93,6 +94,16 @@ void ofApp::setup(){
 						}
 						// move out of pitch
 						xml.setTo("../");
+						
+						// move into lyric
+						if (xml.exists("lyric")) {
+							xml.setTo("lyric");
+							xml.setTo("text");
+							lyric = xml.getValue();
+							xml.setTo("../../");
+						} else {
+							lyric = "";
+						}
 					}
 					
 					// move into, then out of: duration
@@ -102,7 +113,7 @@ void ofApp::setup(){
 					
 					// add new Note to vector
 					ofLog() << step;
-					voicePart[part].push_back(Note(toMidi(step, alter, octave), duration, ""));
+					voicePart[part].push_back(Note(toMidi(step, alter, octave), duration, lyric));
 					numTotalNotes[part]++;
 				}
 				// move out of note
@@ -290,11 +301,12 @@ void ofApp::draw(){
 	if (bIsDone == false) {
 		
 		int i;
-		int noteHeight = 5;
+		int noteHeight;
 		ofColor color[4] = {wisteria, orange, silver, pomegranate};
 		
 		for (int part = 0; part < NPARTS; part++) {
 			i = 0;
+			noteHeight = 5;
 			ofSetColor(color[part]);
 			
 			// for every note in piano roll
@@ -326,10 +338,10 @@ void ofApp::draw(){
 				}
 			
 				// draw the note
-				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
+				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);				
 				i++;
-				ofSetColor(color[TENOR]);
 			}
+			ofSetColor(color[TENOR]);
 		}
 	
 	// if the song is over
