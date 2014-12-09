@@ -34,333 +34,92 @@ void ofApp::setup(){
 	int numMeasures;
 	
 	// create intro beats
-	voicePartS.push_back(Note(0, 4));
-	numTotalNotesS++;
-	voicePartA.push_back(Note(0, 4));
-	numTotalNotesA++;
-	voicePartT.push_back(Note(0, 4));
-	numTotalNotesT++;
-	voicePartB.push_back(Note(0, 4));
-	numTotalNotesB++;
-	
-	// move into soprano
-	xml.setTo("part");
-	
-	numTotalNotesS = 0;
-	
-	numMeasures = xml.getNumChildren();
-	
-	// create song
-	for (int i = 0; i < numMeasures; i++) {
-		
-		// move into measure
-		xml.setToChild(i);
-		
-		int numNotes = xml.getNumChildren();
-		for (int j = 0; j < numNotes; j++) {
-			
-			// move into note
-			xml.setToChild(j);
-			
-			if (xml.getName() == "note") {
-				
-				if (xml.exists("rest")) {
-					
-					step = 0;
-					octave = 0;
-					alter = 0;
-					
-				} else {
-					
-					// move into pitch
-					xml.setTo("pitch");
-					
-					// move into, then out of step
-					xml.setTo("step");
-					step = ofToChar(xml.getValue());
-					xml.setTo("../");
-					
-					
-					if (xml.exists("alter")) {
-						
-						// move into, then out of alter
-						xml.setTo("alter");
-						alter = ofToInt(xml.getValue());
-						xml.setTo("../");
-						
-					} else {
-						alter = 0;
-					}
-					
-					// move into, then out of octave
-					xml.setTo("octave");
-					octave = ofToInt(xml.getValue());
-					xml.setTo("../");
-					
-					// move out of pitch
-					xml.setTo("../");
-				}
-				
-				// move into, then out of duration
-				xml.setTo("duration");
-				duration = ofToInt(xml.getValue());
-				xml.setTo("../");
-				
-				
-				// add new Note to vector
-				voicePartS.push_back(Note(toMidi(step, alter, octave), duration));
-				numTotalNotesS++;
-				
-			}
-			// move out of note
-			xml.setToParent();
-		}
-		// move out of measure
-		xml.setToParent();
+	for (int part = 0; part < NPARTS; part++) {
+    voicePart[part].push_back(Note(0, 4, ""));
+		numTotalNotes[part]++;
 	}
 	
-	
-	// move into alto
-	xml.setToSibling();
-	
-	numTotalNotesA = 0;
-	
-	numMeasures = xml.getNumChildren();
-	
 	// create song
-	for (int i = 0; i < numMeasures; i++) {
+	xml.setTo("score-partwise");
+	for (int part = 0; part < NPARTS; part++) {
+		// move into part
+    xml.setTo("part");
+		numTotalNotes[part] = 0;
+		ofLog() << xml.getName();
 		
-		// move into measure
-		xml.setToChild(i);
+		// for every measure
+		numMeasures = xml.getNumChildren();
+		for (int measure = 0; measure < numMeasures; measure++) {
 		
-		int numNotes = xml.getNumChildren();
-		for (int j = 0; j < numNotes; j++) {
+			// move into measure
+			xml.setToChild(measure);
 			
-			// move into note
-			xml.setToChild(j);
-			
-			if (xml.getName() == "note") {
+			// for every note in the measure
+			int numNotes = xml.getNumChildren();
+			for (int note = 0; note < numNotes; note++) {
 				
-				if (xml.exists("rest")) {
-					
-					step = 0;
-					octave = 0;
-					alter = 0;
-					
-				} else {
-					
-					// move into pitch
-					xml.setTo("pitch");
-					
-					// move into, then out of step
-					xml.setTo("step");
-					step = ofToChar(xml.getValue());
-					xml.setTo("../");
-					
-					
-					if (xml.exists("alter")) {
-						
-						// move into, then out of alter
-						xml.setTo("alter");
-						alter = ofToInt(xml.getValue());
-						xml.setTo("../");
-						
-					} else {
+				// move into note
+				xml.setToChild(note);
+				if (xml.getName() == "note") {
+				
+					// if it's a rest, set to 0
+					if (xml.exists("rest")) {
+						step = '\n';
+						octave = 0;
 						alter = 0;
+					} else {
+						// otherwise, move into pitch
+						xml.setTo("pitch");
+						{
+							// move into, then out of: step
+							xml.setTo("step");
+							step = ofToChar(xml.getValue());
+							xml.setTo("../");
+							
+							// if it's an accidental
+							if (xml.exists("alter")) {
+								// move into, then out of alter
+								xml.setTo("alter");
+								alter = ofToInt(xml.getValue());
+								xml.setTo("../");
+							} else {
+								alter = 0;
+							}
+							
+							// move into, then out of: octave
+							xml.setTo("octave");
+							octave = ofToInt(xml.getValue());
+							xml.setTo("../");
+						}
+						// move out of pitch
+						xml.setTo("../");
 					}
 					
-					// move into, then out of octave
-					xml.setTo("octave");
-					octave = ofToInt(xml.getValue());
+					// move into, then out of: duration
+					xml.setTo("duration");
+					duration = ofToInt(xml.getValue());
 					xml.setTo("../");
 					
-					// move out of pitch
-					xml.setTo("../");
+					// add new Note to vector
+					ofLog() << step;
+					voicePart[part].push_back(Note(toMidi(step, alter, octave), duration, ""));
+					numTotalNotes[part]++;
 				}
-				
-				// move into, then out of duration
-				xml.setTo("duration");
-				duration = ofToInt(xml.getValue());
-				xml.setTo("../");
-				
-				
-				// add new Note to vector
-				voicePartA.push_back(Note(toMidi(step, alter, octave), duration));
-				numTotalNotesA++;
-				
+				// move out of note
+				xml.setToParent();
 			}
-			// move out of note
+			// move out of measure
 			xml.setToParent();
 		}
-		// move out of measure
-		xml.setToParent();
+		xml.setToSibling();
+		ofLog() << "NEXT VOICE -------------";
 	}
 	
-	
-	// move into tenor
-	xml.setToSibling();
-	
-	numTotalNotesT = 0;
-	
-	numMeasures = xml.getNumChildren();
-	
-	// create song
-	for (int i = 0; i < numMeasures; i++) {
-		
-		// move into measure
-		xml.setToChild(i);
-		
-		int numNotes = xml.getNumChildren();
-		for (int j = 0; j < numNotes; j++) {
-			
-			// move into note
-			xml.setToChild(j);
-			
-			if (xml.getName() == "note") {
-				
-				if (xml.exists("rest")) {
-					
-					step = 0;
-					octave = 0;
-					alter = 0;
-					
-				} else {
-					
-					// move into pitch
-					xml.setTo("pitch");
-					
-					// move into, then out of step
-					xml.setTo("step");
-					step = ofToChar(xml.getValue());
-					xml.setTo("../");
-					
-					
-					if (xml.exists("alter")) {
-						
-						// move into, then out of alter
-						xml.setTo("alter");
-						alter = ofToInt(xml.getValue());
-						xml.setTo("../");
-						
-					} else {
-						alter = 0;
-					}
-					
-					// move into, then out of octave
-					xml.setTo("octave");
-					octave = ofToInt(xml.getValue());
-					xml.setTo("../");
-					
-					// move out of pitch
-					xml.setTo("../");
-				}
-				
-				// move into, then out of duration
-				xml.setTo("duration");
-				duration = ofToInt(xml.getValue());
-				xml.setTo("../");
-				
-				
-				// add new Note to vector
-				voicePartT.push_back(Note(toMidi(step, alter, octave), duration));
-				numTotalNotesT++;
-				
-			}
-			// move out of note
-			xml.setToParent();
-		}
-		// move out of measure
-		xml.setToParent();
+	// create outro beats
+	for (int part = 0; part < NPARTS; part++) {
+    voicePart[part].push_back(Note(0, 1, ""));
+		numTotalNotes[part]++;
 	}
-	
-	
-	// move into bass
-	xml.setToSibling();
-	
-	numTotalNotesB = 0;
-	
-	numMeasures = xml.getNumChildren();
-	
-	// create song
-	for (int i = 0; i < numMeasures; i++) {
-		
-		// move into measure
-		xml.setToChild(i);
-		
-		int numNotes = xml.getNumChildren();
-		for (int j = 0; j < numNotes; j++) {
-			
-			// move into note
-			xml.setToChild(j);
-			
-			if (xml.getName() == "note") {
-				
-				if (xml.exists("rest")) {
-					
-					step = 0;
-					octave = 0;
-					alter = 0;
-					
-				} else {
-					
-					// move into pitch
-					xml.setTo("pitch");
-					
-					// move into, then out of step
-					xml.setTo("step");
-					step = ofToChar(xml.getValue());
-					xml.setTo("../");
-					
-					
-					if (xml.exists("alter")) {
-						
-						// move into, then out of alter
-						xml.setTo("alter");
-						alter = ofToInt(xml.getValue());
-						xml.setTo("../");
-						
-					} else {
-						alter = 0;
-					}
-					
-					// move into, then out of octave
-					xml.setTo("octave");
-					octave = ofToInt(xml.getValue());
-					xml.setTo("../");
-					
-					// move out of pitch
-					xml.setTo("../");
-				}
-				
-				// move into, then out of duration
-				xml.setTo("duration");
-				duration = ofToInt(xml.getValue());
-				xml.setTo("../");
-				
-				
-				// add new Note to vector
-				voicePartB.push_back(Note(toMidi(step, alter, octave), duration));
-				numTotalNotesB++;
-				
-			}
-			// move out of note
-			xml.setToParent();
-		}
-		// move out of measure
-		xml.setToParent();
-	}
-	
-	
-	
-	//create outro beats
-	voicePartS.push_back(Note(0, 1));
-	numTotalNotesS++;
-	voicePartA.push_back(Note(0, 1));
-	numTotalNotesA++;
-	voicePartT.push_back(Note(0, 1));
-	numTotalNotesT++;
-	voicePartB.push_back(Note(0, 1));
-	numTotalNotesB++;
 	
 	//	PD SETUP -----
 	int numOutChannels = 2;
@@ -385,24 +144,18 @@ void ofApp::setup(){
 	pd.sendFloat("tempo", tempo);
 	// ---
 	
-	currentBeatS = 1;
-	currentBeatA = 1;
-	currentBeatT = 1;
-	currentBeatB = 1;
-	
-	currentNoteS = 0;
-	currentNoteA = 0;
-	currentNoteT = 0;
-	currentNoteB = 0;
+	for (int part = 0; part < NPARTS; part++) {
+    currentBeat[part] = 1;
+		currentNote[part] = 0;
+	}
 	
 	pd.sendFloat("volume", 1);
 	
 	//  PIANOROLL SETUP -----
 	for (int col = 0; col < 128; col++) {
-		pianoRollS.push_back(0);
-		pianoRollA.push_back(0);
-		pianoRollT.push_back(0);
-		pianoRollB.push_back(0);
+		for (int part = 0; part < NPARTS; part++) {
+			pianoRoll[part].push_back(0);
+		}
 	}
 	
 	//  OF SETUP -----
@@ -418,7 +171,6 @@ void ofApp::setup(){
 	difficulty = 5;
 	bIsDone = false;
 	bIsStarted = false;
-	sumTenor = 0;
 	
 }
 
@@ -474,80 +226,57 @@ void ofApp::update(){
 	
 	if (metroBeat > 0) {
 		
-		pianoRollS.erase(pianoRollS.begin());
-		pianoRollS.push_back(voicePartS[currentNoteS].pitch);
-		pianoRollA.erase(pianoRollA.begin());
-		pianoRollA.push_back(voicePartA[currentNoteA].pitch);
-		pianoRollT.erase(pianoRollT.begin());
-		pianoRollT.push_back(voicePartT[currentNoteT].pitch);
-		pianoRollB.erase(pianoRollB.begin());
-		pianoRollB.push_back(voicePartB[currentNoteB].pitch);
+		// keep the whole roll moving
+		for (int part = 0; part < NPARTS; part++) {
+			pianoRoll[part].erase(pianoRoll[part].begin());
+			pianoRoll[part].push_back(voicePart[part][currentNote[part]].pitch);
+		}
 		
 		// if note has played for full length, go to next note
-		if (metroBeat - currentBeatS >= voicePartS[currentNoteS].duration) {
-			currentNoteS++;
-			currentBeatS = metroBeat;
+		for (int part = 0; part < NPARTS; part++) {
+			if (metroBeat - currentBeat[part] >= voicePart[part][currentNote[part]].duration) {
+				currentNote[part]++;
+				currentBeat[part] = metroBeat;
+			}
 		}
-		if (metroBeat - currentBeatA >= voicePartA[currentNoteA].duration) {
-			currentNoteA++;
-			currentBeatA = metroBeat;
-		}
-		if (metroBeat - currentBeatT >= voicePartT[currentNoteT].duration) {
-			currentNoteT++;
-			currentBeatT = metroBeat;
-		}
-		if (metroBeat - currentBeatB >= voicePartB[currentNoteB].duration) {
-			currentNoteB++;
-			currentBeatB= metroBeat;
+
+		// if song is finished, make pianoRoll blank
+		for (int part = 0; part < NPARTS; part++) {
+			if (currentNote[part] == numTotalNotes[part]) {
+				pianoRoll[part].erase(pianoRoll[part].begin());
+				pianoRoll[part].push_back(-1);
+			}
 		}
 		
-				// if song is finished, make pianoRoll blank
-		if (currentNoteS == numTotalNotesS) {
-			pianoRollS.erase(pianoRollS.begin());
-			pianoRollS.push_back(-1);
-		}
-		if (currentNoteA == numTotalNotesA) {
-			pianoRollA.erase(pianoRollA.begin());
-			pianoRollA.push_back(-1);
-		}
-		if (currentNoteT == numTotalNotesT) {
-			pianoRollT.erase(pianoRollT.begin());
-			pianoRollT.push_back(-1);
-		}
-		if (currentNoteB == numTotalNotesB) {
-			pianoRollB.erase(pianoRollB.begin());
-			pianoRollB.push_back(-1);
-		}
-		
-		if (pianoRollT[0] < 0 && pianoRollT[127] < 0) {
+		// if tenor part is over
+		if (pianoRoll[TENOR][0] < 0 && pianoRoll[TENOR][127] < 0) {
 			bIsDone = true;
 		}
 	}
 	
 	// send the pitch that's touching the HUD
-	pd.sendFloat("pitch", pianoRollT[0]);
+	pd.sendFloat("pitch", pianoRoll[TENOR][0]);
 	
-	pd.sendFloat("soprano", pianoRollS[0] - pianoRollT[0]);
-	pd.sendFloat("alto", pianoRollA[0] - pianoRollT[0]);
+	// send the other pitches
+	pd.sendFloat("soprano", pianoRoll[SOPRANO][0] - pianoRoll[TENOR][0]);
+	pd.sendFloat("alto", pianoRoll[ALTO][0] - pianoRoll[TENOR][0]);
 	pd.sendFloat("tenor", 0);
-	pd.sendFloat("bass", pianoRollB[0] - pianoRollT[0]);
+	pd.sendFloat("bass", pianoRoll[BASS][0] - pianoRoll[TENOR][0]);
 	
 	
-	
-	if (pianoRollT[0] > 0 && pianoRollT[0] < 128) {
+	// if there's a tenor note, turn on the volume, otherwise, mute
+	if (pianoRoll[TENOR][0] > 0 && pianoRoll[TENOR][0] < 128) {
 		pd.sendFloat("volume", 1);
 	} else {
 		pd.sendFloat("volume", 0);
 	}
-	
-	
 	
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
 	
-		// left third HUD
+	// left third HUD
 	ofSetColor(wetAsphalt);
 	ofRect(0, 0, ofGetWidth() / 3, ofGetHeight());
 	
@@ -561,76 +290,54 @@ void ofApp::draw(){
 	if (bIsDone == false) {
 		
 		int i;
+		int noteHeight = 5;
+		ofColor color[4] = {wisteria, orange, silver, pomegranate};
 		
-		// pianoRollS
-		ofSetColor(wisteria);
-		i = 0;
-		for (vector<int>::iterator iter = pianoRollS.begin(); iter != pianoRollS.end(); ++iter) {
+		for (int part = 0; part < NPARTS; part++) {
+			i = 0;
+			ofSetColor(color[part]);
 			
-			noteYPos = ofGetHeight() - convertRange(*iter, 0, 127, 0, ofGetHeight());
-			// draw the note
-			ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, 5);
-			i++;
-		}
-		
-		// pianoRollA
-		ofSetColor(orange);
-		i = 0;
-		for (vector<int>::iterator iter = pianoRollA.begin(); iter != pianoRollA.end(); ++iter) {
+			// for every note in piano roll
+			for (vector<int>::iterator iter = pianoRoll[part].begin(); iter != pianoRoll[part].end(); ++iter) {
 			
-			noteYPos = ofGetHeight() - convertRange(*iter, 0, 127, 0, ofGetHeight());
-			// draw the note
-			ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, 5);
-			i++;
-		}
-		
-		// pianoRollB
-		ofSetColor(pomegranate);
-		i = 0;
-		for (vector<int>::iterator iter = pianoRollB.begin(); iter != pianoRollB.end(); ++iter) {
-			
-			noteYPos = ofGetHeight() - convertRange(*iter, 0, 127, 0, ofGetHeight());
-			// draw the note
-			ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, 5);
-			i++;
-		}
-		
-		// pianoRollT
-		ofSetColor(silver);
-		i = 0;
-		sumTenor = 0;
-		for (vector<int>::iterator iter = pianoRollT.begin(); iter != pianoRollT.end(); ++iter) {
-			
-			noteYPos = ofGetHeight() - convertRange(*iter, 0, 127, 0, ofGetHeight());
-			if (noteYPos >= ofGetHeight()) {
-				noteYPos = ofGetHeight();
-			} else if (noteYPos <= 0) {
-				noteYPos = 0;
-			}
-			
-			// set note and triangle color
-			if (i < 10) {
-				if (voicePitch < noteYPos + difficulty && voicePitch > noteYPos - difficulty) {
-					ofSetColor(nephritis);
-					voiceColor = nephritis;
-				} else if (voicePitch < noteYPos + difficulty * 1.5 && voicePitch > noteYPos - difficulty * 1.5) {
-					ofSetColor(emerald);
-					voiceColor = emerald;
+				// set noteYPos
+				noteYPos = ofGetHeight() - convertRange(*iter, 0, 127, 0, ofGetHeight());
+				if (noteYPos >= ofGetHeight()) {
+					noteYPos = ofGetHeight();
 				}
-			}
+				if (noteYPos <= 0) {
+					noteYPos = 0;
+				}
+
 			
-			// draw the note
-			ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, 10);
-			i++;
-			sumTenor += noteYPos	;
-			ofSetColor(silver);
+				if (part == TENOR) {
+					noteHeight = 10;
+					
+					// if the note is on-pitch, change its color
+					if (i < 10) {
+						if (voicePitch < noteYPos + difficulty && voicePitch > noteYPos - difficulty) {
+							ofSetColor(nephritis);
+							voiceColor = nephritis;
+						} else if (voicePitch < noteYPos + difficulty * 1.5 && voicePitch > noteYPos - difficulty * 1.5) {
+							ofSetColor(emerald);
+							voiceColor = emerald;
+						}
+					}
+				}
+			
+				// draw the note
+				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
+				i++;
+				ofSetColor(color[TENOR]);
+			}
 		}
-		
+	
+	// if the song is over
 	} else {
 		font.drawString("that was beautiful", ofGetWidth() / 2 - font.stringWidth("that was beautiful") / 2, ofGetHeight() / 2 - font.stringHeight("that was beautiful") / 2);
 	}
 	
-	
+	// if the song hasn't started yet
 	if (bIsStarted == false) {
 		font.drawString("tap to begin", ofGetWidth() / 2 - font.stringWidth("tap to begin") / 2, ofGetHeight() / 2 - font.stringHeight("tap to begin") / 2);
 	}

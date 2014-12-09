@@ -6,6 +6,13 @@
 #include "ofxPd.h"
 #include "NamedColors.h"
 
+#define NPARTS 4
+
+#define SOPRANO 0
+#define ALTO 1
+#define TENOR 2
+#define BASS 3
+
 struct Note {
 	Note(int _pitch, int _duration, string _lyric) {
 		pitch = _pitch;
@@ -46,35 +53,20 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 		map<string, int> midiTable;
 		ofTrueTypeFont font;
 	
-		vector<Note> voicePartS;
-		vector<Note> voicePartA;
-		vector<Note> voicePartT;
-		vector<Note> voicePartB;
+		vector<Note> voicePart[NPARTS];
 	
-		vector<int> pianoRollS;
-		vector<int> pianoRollA;
-		vector<int> pianoRollT;
-		vector<int> pianoRollB;
+		vector<int> pianoRoll[NPARTS];
 		
 		float bpm;
 		float tempo;
-		
-		int numTotalNotesS;
-		int numTotalNotesA;
-		int numTotalNotesT;
-		int numTotalNotesB;
+	
+		int numTotalNotes[NPARTS];
 	
 		int metroBeat;
 	
-		int currentBeatS;
-		int currentBeatA;
-		int currentBeatT;
-		int currentBeatB;
+		int currentBeat[NPARTS];
 	
-		int currentNoteS;
-		int currentNoteA;
-		int currentNoteT;
-		int currentNoteB;
+		int currentNote[NPARTS];
 		
 		float voicePitch;
 		ofColor voiceColor;
@@ -85,8 +77,6 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 	
 		bool bIsDone;
 		bool bIsStarted;
-	
-		int sumTenor;
 
 };
 
