@@ -54,6 +54,8 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 	
 		ofTrueTypeFont font;
 	
+		int voice;
+	
 		vector<Note>		voicePart[NPARTS];
 		vector<int>			pianoRoll[NPARTS];
 		vector<string>	lyricRoll[NPARTS];
@@ -77,7 +79,7 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 	
 		int fromFiddle;
 	
-		bool bIsDone;
+		int isDone[4];
 		bool bIsStarted;
 
 };

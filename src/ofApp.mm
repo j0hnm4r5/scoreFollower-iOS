@@ -2,6 +2,8 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+
+	voice = TENOR;
 	
 	//	MIDI MAP -----
 	{
@@ -25,7 +27,8 @@ void ofApp::setup(){
 	}
 	
 	//	XML SETUP -----
-	xml.load("twinkle.xml");
+	xml.load("InMyRoom-ScoreFollow.xml");
+//	xml.load("twinkle.xml");
 	
 	char step;
 	int alter;
@@ -128,8 +131,10 @@ void ofApp::setup(){
 	
 	// create outro beats
 	for (int part = 0; part < NPARTS; part++) {
-    voicePart[part].push_back(Note(0, 1, ""));
-		numTotalNotes[part]++;
+		for (int i = 0; i < 8; i++) {
+			voicePart[part].push_back(Note(0, 1, ""));
+			numTotalNotes[part]++;
+		}
 	}
 	
 	//	PD SETUP -----
@@ -150,7 +155,7 @@ void ofApp::setup(){
 	ofSoundStreamSetup(numOutChannels, numInChannels, this, sampleRate, ofxPd::blockSize() * ticksPerBuffer, 1);
 	
 	// TODO: this is broken; libpd is running metro too slow ---
-	bpm = 250;
+	bpm = 500;
 	tempo = (60 / bpm) * 1000;
 	pd.sendFloat("tempo", tempo);
 	// ---
@@ -159,9 +164,8 @@ void ofApp::setup(){
     currentBeat[part] = 1;
 		currentNote[part] = 0;
 		lastLyric[part] = "";
+		isDone[part] = 127;
 	}
-	
-	pd.sendFloat("volume", 1);
 	
 	//  PIANOROLL SETUP -----
 	for (int col = 0; col < 128; col++) {
@@ -188,7 +192,6 @@ void ofApp::setup(){
 	
 	voicePitch = ofGetHeight() / 2;
 	difficulty = 5;
-	bIsDone = false;
 	bIsStarted = false;
 	
 }
@@ -245,64 +248,48 @@ void ofApp::update(){
 	
 	if (metroBeat > 0) {
 	
-		// this works with a pianoroll, an 128 item long integer array (per part) that contains the midi value of each note. While a note is being "played" it is added to the end of the array, and the item at the front is removed per frame.
+		// this works with a pianoroll, a 128 item long integer array (per part) that contains the midi value of each note. While a note is being "played" it is added to the end of the array, and the item at the front is removed per frame.
 		
 		// keep the whole roll moving;
-		// add the current note to the end of the pianoroll, and delete the first note
-		for (int part = 0; part < NPARTS; part++) {
-			pianoRoll[part].erase(pianoRoll[part].begin());
-			pianoRoll[part].push_back(voicePart[part][currentNote[part]].pitch);
-			
-			
-			if (lastLyric[part] != voicePart[part][currentNote[part]].lyric) {
-				lyricRoll[part].erase(lyricRoll[part].begin());
-				lyricRoll[part].push_back(voicePart[part][currentNote[part]].lyric);
-			} else {
-				lyricRoll[part].erase(lyricRoll[part].begin());
-				lyricRoll[part].push_back("");
-			}
-			
-			lastLyric[part] = voicePart[part][currentNote[part]].lyric;
-		}
 		
-		// if note has played for full length, move on to the next note
 		for (int part = 0; part < NPARTS; part++) {
-			if (metroBeat - currentBeat[part] >= voicePart[part][currentNote[part]].duration) {
-				currentNote[part]++;
-				currentBeat[part] = metroBeat;
-			}
-		}
-
-		// if song is finished, make pianoRoll blank
-		for (int part = 0; part < NPARTS; part++) {
+			// if song is finished
 			if (currentNote[part] == numTotalNotes[part]) {
 				pianoRoll[part].erase(pianoRoll[part].begin());
 				pianoRoll[part].push_back(-1);
+				lyricRoll[part].erase(lyricRoll[part].begin());
+				lyricRoll[part].push_back("");
+				isDone[part]--;
+			} else {
+				// add the current note to the end of the pianoroll, and delete the first note
+				pianoRoll[part].erase(pianoRoll[part].begin());
+				pianoRoll[part].push_back(voicePart[part][currentNote[part]].pitch);
+				
+				// add the current lyric to the end of the pianoroll, and delete the first lyric. Only show lyric once per note.
+				string currentLyric = voicePart[part][currentNote[part]].lyric;
+				if (lastLyric[part] != currentLyric) {
+					lyricRoll[part].erase(lyricRoll[part].begin());
+					lyricRoll[part].push_back(currentLyric);
+				} else {
+					lyricRoll[part].erase(lyricRoll[part].begin());
+					lyricRoll[part].push_back("");
+				}
+				lastLyric[part] = currentLyric;
+				
+				// if note has played for full length, move on to the next note
+				if (metroBeat - currentBeat[part] >= voicePart[part][currentNote[part]].duration) {
+					currentNote[part]++;
+					currentBeat[part] = metroBeat;
+				}
 			}
 		}
-		
-		// if tenor part is over
-		if (pianoRoll[TENOR][0] < 0 && pianoRoll[TENOR][127] < 0) {
-			bIsDone = true;
-		}
 	}
 	
-	// send the pitch that's touching the HUD
-	pd.sendFloat("pitch", pianoRoll[TENOR][0]);
-	
-	// send the other pitches
-	pd.sendFloat("soprano", pianoRoll[SOPRANO][0] - pianoRoll[TENOR][0]);
-	pd.sendFloat("alto", pianoRoll[ALTO][0] - pianoRoll[TENOR][0]);
-	pd.sendFloat("tenor", 0);
-	pd.sendFloat("bass", pianoRoll[BASS][0] - pianoRoll[TENOR][0]);
-	
-	
-	// if there's a tenor note, turn on the volume, otherwise, mute
-	if (pianoRoll[TENOR][0] > 0 && pianoRoll[TENOR][0] < 128) {
-		pd.sendFloat("volume", 1);
-	} else {
-		pd.sendFloat("volume", 0);
-	}
+	// send the semitone offsets
+	pd.sendFloat("soprano", pianoRoll[SOPRANO][0] - pianoRoll[voice][0]);
+	pd.sendFloat("alto", pianoRoll[ALTO][0] - pianoRoll[voice][0]);
+	pd.sendFloat("tenor", pianoRoll[TENOR][0] - pianoRoll[voice][0]);
+	pd.sendFloat("bass", pianoRoll[BASS][0] - pianoRoll[voice][0]);
 	
 }
 
@@ -320,7 +307,11 @@ void ofApp::draw(){
 	voiceColor = concrete;
 	
 	
-	if (bIsDone == false) {
+	int isDoneSum = 0;
+	for (int part = 0; part < NPARTS; part++) {
+		isDoneSum	 += isDone[part];
+	}
+	if (isDoneSum > 0) {
 		
 		int noteHeight;
 		ofColor color[4] = {wisteria, orange, silver, pomegranate};
@@ -333,22 +324,23 @@ void ofApp::draw(){
 				// set noteYPos
 				noteYPos = ofGetHeight() - convertRange(pianoRoll[part][i], 0, 127, 0, ofGetHeight());
 			
-				if (part == TENOR) {
+				if (part == voice) {
 					noteHeight = 10;
+					// draw lyric
+					font.drawString(lyricRoll[part][i], i * 10 + (ofGetWidth() / 3), noteYPos - 20);
 				}
 				
-				// draw lyric
-					font.drawString(lyricRoll[part][i], i * 10 + (ofGetWidth() / 3), noteYPos - 20);
 				// draw note
 				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
 				
 			}
-			ofSetColor(color[TENOR]);
+			ofSetColor(color[voice]);
 		}
 	
 	// if the song is over
 	} else {
-		font.drawString("that was beautiful", ofGetWidth() / 2 - font.stringWidth("that was beautiful") / 2, ofGetHeight() / 2 - font.stringHeight("that was beautiful") / 2);
+		string over = "that was beautiful";
+		font.drawString(over, ofGetWidth() / 2 - font.stringWidth(over) / 2, ofGetHeight() / 2 - font.stringHeight(over) / 2);
 	}
 	
 	// if the song hasn't started yet

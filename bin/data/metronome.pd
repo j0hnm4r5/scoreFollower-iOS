@@ -1,4 +1,4 @@
-#N canvas 672 123 745 593 10;
+#N canvas 197 193 745 593 10;
 #X obj 19 94 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
 -1;
 #X obj 353 31 loadbang;
@@ -393,6 +393,7 @@
 #X obj 491 328 r soprano;
 #X msg 520 52 \; bass 0 \; tenor 4 \; alto 7 \; soprano 12 \;;
 #X msg 428 53 \; window 100 \; delay 0 \;;
+#X msg 473 186 \; pitch 48 \; volume 1 \;;
 #X connect 0 0 7 0;
 #X connect 1 0 15 0;
 #X connect 1 0 37 0;
@@ -410,6 +411,8 @@
 #X connect 12 0 0 0;
 #X connect 16 0 17 0;
 #X connect 17 0 18 0;
+#X connect 19 0 11 0;
+#X connect 19 0 11 1;
 #X connect 20 0 19 1;
 #X connect 21 0 31 0;
 #X connect 21 0 31 1;
