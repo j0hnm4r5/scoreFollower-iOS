@@ -3,8 +3,6 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 
-	voice = TENOR;
-	
 	//	MIDI MAP -----
 	{
 		midiTable["C"]  = 24;
@@ -26,10 +24,9 @@ void ofApp::setup(){
 		midiTable["B"]  = 35;
 	}
 	
-	//	XML SETUP -----
-	xml.load("InMyRoom-ScoreFollow.xml");
-//	xml.load("twinkle.xml");
+	pickSong();
 	
+	//	XML SETUP -----
 	char step;
 	int alter;
 	int octave;
@@ -155,7 +152,6 @@ void ofApp::setup(){
 	ofSoundStreamSetup(numOutChannels, numInChannels, this, sampleRate, ofxPd::blockSize() * ticksPerBuffer, 1);
 	
 	// TODO: this is broken; libpd is running metro too slow ---
-	bpm = 500;
 	tempo = (60 / bpm) * 1000;
 	pd.sendFloat("tempo", tempo);
 	// ---
@@ -195,6 +191,25 @@ void ofApp::setup(){
 	bIsStarted = false;
 	bIsCalibrating = false;
 	
+}
+
+//--------------------------------------------------------------
+void ofApp::pickSong(){
+
+	string titles[4] = {"In My Room", "Twinkle Twinkle", "Ripe and Ruin", "Tetris"};
+	string filenames[4] = {"inMyRoom.xml", "twinkle.xml", "ripeAndRuin.xml", "tetris.xml"};
+	int bpms[4] = {250, 250, 400, 400};
+	int voices[4] = {SOPRANO, TENOR, SOPRANO, SOPRANO};
+	
+	ofSeedRandom();
+	int choice = (int)ofRandom(0, 4);
+	ofLog() << choice;
+	
+	xml.load(filenames[choice]);
+	voice = voices[choice];
+	bpm = bpms[choice];
+	song = titles[choice];
+
 }
 
 //--------------------------------------------------------------
@@ -360,8 +375,28 @@ void ofApp::draw(){
 		calibrate();
 	}
 	
+}
+
+//--------------------------------------------------------------
+void ofApp::drawTitle(){
+	string begin;
+	begin = "you're going to be singing \"" + song + "\"";
+	font.drawString(begin, ofGetWidth() / 2 - font.stringWidth(begin) / 2, ofGetHeight() / 2 - font.stringHeight(begin) / 2 - 30);
+	begin = "\n\ntouch and hold the screen ";
+	font.drawString(begin, ofGetWidth() / 2 - font.stringWidth(begin) / 2, ofGetHeight() / 2 - font.stringHeight(begin) / 2 - 30);
+	begin = "\n\n\nwhile singing a comfortable starting note";
+	font.drawString(begin, ofGetWidth() / 2 - font.stringWidth(begin) / 2, ofGetHeight() / 2 - font.stringHeight(begin) / 2 - 30);
+	begin = "\n\n\n\n\nlift to lock it in and begin";
+	font.drawString(begin, ofGetWidth() / 2 - font.stringWidth(begin) / 2, ofGetHeight() / 2 - font.stringHeight(begin) / 2 - 30);
 	
-	
+}
+
+//--------------------------------------------------------------
+void ofApp::drawEnd(){
+	string over = "that was beautiful";
+	font.drawString(over, ofGetWidth() / 2 - font.stringWidth(over) / 2, ofGetHeight() / 2 - font.stringHeight(over) / 2);
+}
+
 //--------------------------------------------------------------
 void ofApp::calibrate(){
 	noteOffset = voicePart[voice][1].pitch - fromFiddle;

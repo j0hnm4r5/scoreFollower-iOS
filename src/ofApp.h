@@ -32,6 +32,12 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 		void update();
 		void draw();
 		void exit();
+	
+		void pickSong();
+		string song;
+	
+		void drawTitle();
+		void drawEnd();
 
 		void touchDown(ofTouchEventArgs & touch);
 		void touchMoved(ofTouchEventArgs & touch);
