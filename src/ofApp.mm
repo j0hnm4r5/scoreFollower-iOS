@@ -39,7 +39,7 @@ void ofApp::setup(){
 	
 	// create intro beats
 	for (int part = 0; part < NPARTS; part++) {
-    voicePart[part].push_back(Note(0, 4, ""));
+    voicePart[part].push_back(Note(-100, 4, ""));
 		numTotalNotes[part]++;
 	}
 	
@@ -132,7 +132,7 @@ void ofApp::setup(){
 	// create outro beats
 	for (int part = 0; part < NPARTS; part++) {
 		for (int i = 0; i < 8; i++) {
-			voicePart[part].push_back(Note(0, 1, ""));
+			voicePart[part].push_back(Note(-200, 1, ""));
 			numTotalNotes[part]++;
 		}
 	}
@@ -193,6 +193,7 @@ void ofApp::setup(){
 	voicePitch = ofGetHeight() / 2;
 	difficulty = 5;
 	bIsStarted = false;
+	bIsCalibrating = false;
 	
 }
 
@@ -263,7 +264,7 @@ void ofApp::update(){
 			} else {
 				// add the current note to the end of the pianoroll, and delete the first note
 				pianoRoll[part].erase(pianoRoll[part].begin());
-				pianoRoll[part].push_back(voicePart[part][currentNote[part]].pitch);
+				pianoRoll[part].push_back(voicePart[part][currentNote[part]].pitch - noteOffset);
 				
 				// add the current lyric to the end of the pianoroll, and delete the first lyric. Only show lyric once per note.
 				string currentLyric = voicePart[part][currentNote[part]].lyric;
@@ -300,13 +301,6 @@ void ofApp::draw(){
 	ofSetColor(wetAsphalt);
 	ofRect(0, 0, ofGetWidth() / 3, ofGetHeight());
 	
-	// voicePitch triangle
-	ofSetColor(voiceColor);
-	voicePitch = ofGetHeight() - convertRange(fromFiddle, 0, 127, 0, ofGetHeight());;
-	ofTriangle(ofGetWidth() / 3 + 5, voicePitch, ofGetWidth() / 3 - 20, voicePitch + 20, ofGetWidth() / 3 - 20, voicePitch - 15);
-	voiceColor = concrete;
-	
-	
 	int isDoneSum = 0;
 	for (int part = 0; part < NPARTS; part++) {
 		isDoneSum	 += isDone[part];
@@ -316,41 +310,61 @@ void ofApp::draw(){
 		int noteHeight;
 		ofColor color[4] = {wisteria, orange, silver, pomegranate};
 		
+		// for all parts but voice
 		for (int part = 0; part < NPARTS; part++) {
-			noteHeight = 5;
-			ofSetColor(color[part]);
-			for (int i = 0; i < 128; i++) {
-			
-				// set noteYPos
-				noteYPos = ofGetHeight() - convertRange(pianoRoll[part][i], 0, 127, 0, ofGetHeight());
-			
-				if (part == voice) {
-					noteHeight = 10;
-					// draw lyric
-					font.drawString(lyricRoll[part][i], i * 10 + (ofGetWidth() / 3), noteYPos - 20);
+			if (part != voice) {
+				noteHeight = 5;
+				ofSetColor(color[part]);
+				for (int i = 0; i < 128; i++) {
+				
+					// set noteYPos
+					noteYPos = ofGetHeight() - convertRange(pianoRoll[part][i], 0, 127, 0, ofGetHeight());
+					// draw note
+					ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
 				}
-				
-				// draw note
-				ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
-				
 			}
-			ofSetColor(color[voice]);
 		}
+		
+		// for voice
+		for (int i = 0; i < 128; i++) {
+		ofSetColor(color[voice]);
+			noteHeight = 10;
+			// set noteYPos
+			noteYPos = ofGetHeight() - convertRange(pianoRoll[voice][i], 0, 127, 0, ofGetHeight());
+			// draw lyric
+			font.drawString(lyricRoll[voice][i], i * 10 + (ofGetWidth() / 3) + 5, noteYPos - 20);
+			// draw note
+			if (fromFiddle == pianoRoll[voice][i] && i < 20) {
+				ofSetColor(emerald);
+			}
+			ofRect(i * 10 + (ofGetWidth() / 3), noteYPos, 10, noteHeight);
+		}
+	
+	// voicePitch triangle
+	ofSetColor(color[voice]);
+	voicePitch = ofGetHeight() - convertRange(fromFiddle, 0, 127, 0, ofGetHeight());;
+	ofTriangle(ofGetWidth() / 3 + 5, voicePitch, ofGetWidth() / 3 - 20, voicePitch + 20, ofGetWidth() / 3 - 20, voicePitch - 15);
 	
 	// if the song is over
 	} else {
-		string over = "that was beautiful";
-		font.drawString(over, ofGetWidth() / 2 - font.stringWidth(over) / 2, ofGetHeight() / 2 - font.stringHeight(over) / 2);
+		drawEnd();
 	}
 	
 	// if the song hasn't started yet
 	if (bIsStarted == false) {
-		font.drawString("tap to begin", ofGetWidth() / 2 - font.stringWidth("tap to begin") / 2, ofGetHeight() / 2 - font.stringHeight("tap to begin") / 2);
+		drawTitle();
+	}
+	
+	// if we're calibrating
+	if (bIsCalibrating == true) {
+		calibrate();
 	}
 	
 	
 	
-	
+//--------------------------------------------------------------
+void ofApp::calibrate(){
+	noteOffset = voicePart[voice][1].pitch - fromFiddle;
 }
 
 //--------------------------------------------------------------
@@ -360,9 +374,9 @@ void ofApp::exit(){
 
 //--------------------------------------------------------------
 void ofApp::touchDown(ofTouchEventArgs & touch){
-
-	pd.sendFloat("io", 1);
-	bIsStarted = true;
+	if (bIsStarted == false) {
+		bIsCalibrating = true;
+	}
 	
 }
 
@@ -370,6 +384,17 @@ void ofApp::touchDown(ofTouchEventArgs & touch){
 void ofApp::touchMoved(ofTouchEventArgs & touch){
 
 }
+
+//--------------------------------------------------------------
+void ofApp::touchUp(ofTouchEventArgs & touch){
+	if (bIsCalibrating == true) {
+		bIsCalibrating = false;
+		pd.sendFloat("io", 1);
+		bIsStarted = true;
+	}
+}
+
+
 
 //--------------------------------------------------------------
 void ofApp::lostFocus(){

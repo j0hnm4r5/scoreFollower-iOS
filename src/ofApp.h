@@ -35,6 +35,7 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 
 		void touchDown(ofTouchEventArgs & touch);
 		void touchMoved(ofTouchEventArgs & touch);
+		void touchUp(ofTouchEventArgs & touch);
 
 		void lostFocus();
 		void gotFocus();
@@ -49,6 +50,10 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 		void audioOut(float* output, int bufferSize, int numChannels);
 		void audioIn(float* input, int bufferSize, int numChannels);
 		void receiveFloat(const std::string& dest, float value);
+	
+		void calibrate();
+		int startingNote;
+		int noteOffset;
 		
 		map<string, int> midiTable;
 	
@@ -81,6 +86,7 @@ class ofApp : public ofxiOSApp, public PdReceiver {
 	
 		int isDone[4];
 		bool bIsStarted;
+		bool bIsCalibrating;
 
 };
 
